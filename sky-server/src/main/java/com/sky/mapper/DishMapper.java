@@ -17,6 +17,13 @@ import java.util.List;
 public interface DishMapper {
 
     /**
+     * 动态条件查询菜品
+     * @param dish
+     * @return
+     */
+    List<Dish> list(Dish dish);
+
+    /**
      * 根据分类id查询菜品数量
      * @param categoryId
      * @return
