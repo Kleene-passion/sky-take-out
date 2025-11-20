@@ -10,10 +10,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 套餐管理
@@ -26,6 +28,9 @@ public class SetmealController {
 
     @Autowired
     private SetmealService setmealService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     /**
      * 分页查询
@@ -80,6 +85,11 @@ public class SetmealController {
         } else if (ids != null && !ids.isEmpty()) {
             setmealService.startOrStop(status, ids);
         }
+
+        // 将所有的菜品缓存数据清理掉，所有以dish_开头的key
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
+
         return Result.success();
     }
 

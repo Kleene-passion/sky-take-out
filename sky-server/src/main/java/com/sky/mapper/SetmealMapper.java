@@ -6,6 +6,7 @@ import com.sky.entity.Setmeal;
 import com.sky.vo.SetmealVO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -61,4 +62,11 @@ public interface SetmealMapper {
       * @param setmeal
       */
     void update(Setmeal setmeal);
+
+     /**
+      * 根据套餐id查询套餐是否关联了菜品
+      * @param ids
+      * @return
+      */
+    Integer countEnableByIds(@Param("ids") List<Long> ids,@Param("status") Integer status);
 }

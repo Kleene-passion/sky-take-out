@@ -50,4 +50,10 @@ public interface SetmealDishMapper {
     @Select("select * from sky_take_out.setmeal_dish where setmeal_id = #{setmealId}")
     List<SetmealDish> getBySetmealId(@Param("setmealId") Long setmealId);
 
+    /**
+     * 根据菜品id查询套餐id
+     * @param dishIds
+     * @return
+     */
+    List<Long> getSetmealIdsByDishIds(@Param("dishIds") List<Long> dishIds);
 }

@@ -12,17 +12,18 @@ import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
+import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -36,6 +37,11 @@ public class DishServiceImpl implements DishService {
 
     @Autowired
     private SetmealDishMapper setmealDishMapper;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+    @Autowired
+    private SetmealMapper setmealMapper;
 
     /**
      * 根据分类id查询菜品
@@ -196,5 +202,57 @@ public class DishServiceImpl implements DishService {
         }
 
         return dishVOList;
+    }
+
+    /**
+     * 菜品起售/停售
+     * @param status  1-起售  0-停售
+     * @param id      菜品id
+     */
+    @Override
+    @Transactional
+    public void startOrStop(Integer status, Long id) {
+
+        // 0. 参数校验
+        if (id == null || status == null) {
+            throw new IllegalArgumentException("菜品状态修改失败：id 或 status 不能为空");
+        }
+
+        // 1. 如果是【停售】，先判断是否被启售中的套餐关联
+        if (Objects.equals(status, StatusConstant.DISABLE)) {
+
+            // 1.1 查出这个菜品关联的所有套餐ID
+            List<Long> setmealIds =
+                    setmealDishMapper.getSetmealIdsByDishIds(Collections.singletonList(id));
+            if (setmealIds != null && !setmealIds.isEmpty()) {
+
+                // 1.2 只统计“启售中”的套餐数量
+                Integer enableCount = setmealMapper.countEnableByIds(setmealIds, StatusConstant.ENABLE);
+                if (enableCount != null && enableCount > 0) {
+                    // 有启售中的套餐在用这道菜，不能停售
+                    throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
+                }
+            }
+        }
+
+        // 2. 真正更新菜品状态
+        int n = dishMapper.updateStatus(status, id);
+        if (n == 0) {
+            // 数据库里根本没这条记录，或者参数没绑定上
+            throw new RuntimeException("更新失败：请检查参数或记录是否存在");
+        }
+
+        // 3. 精准删除 Redis 缓存（按分类删）
+        Dish dish = dishMapper.getById(id);
+        if (dish != null && dish.getCategoryId() != null) {
+            Long categoryId = dish.getCategoryId();
+            // 这里的 key 规则要和用户端查询使用的一致，比如 user 端用的是 "dish_" + categoryId + "_1"
+            String pattern = "dish_" + categoryId + "_*";
+
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        }
     }
 }
