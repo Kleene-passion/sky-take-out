@@ -10,6 +10,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,6 +52,7 @@ public class SetmealController {
      */
     @DeleteMapping
     @ApiOperation("批量删除套餐")
+    @CacheEvict(cacheNames = "setmealCache", allEntries = true)  //删除setmealCache中ids对应的缓存
     public Result delete(@RequestParam List<Long> ids){
         setmealService.deleteBatch(ids);
         return Result.success();
@@ -63,6 +65,7 @@ public class SetmealController {
      */
     @PostMapping
     @ApiOperation("新增套餐")
+    @CacheEvict(cacheNames = "setmealCache", key = "#setmealDTO.categoryId")  //删除setmealCache中categoryId对应的缓存
     public Result save(@RequestBody SetmealDTO setmealDTO) {
         setmealService.saveWithDish(setmealDTO);
         return Result.success();
@@ -77,6 +80,7 @@ public class SetmealController {
      */
     @PostMapping("/status/{status}")
     @ApiOperation("套餐状态起售停售")
+    @CacheEvict(cacheNames = "setmealCache", allEntries = true)
     public Result<Void> startOrStop(@PathVariable Integer status,
                                     @RequestParam(required = false) Long id,
                                     @RequestParam(required = false) List<Long> ids) {
@@ -85,11 +89,6 @@ public class SetmealController {
         } else if (ids != null && !ids.isEmpty()) {
             setmealService.startOrStop(status, ids);
         }
-
-        // 将所有的菜品缓存数据清理掉，所有以dish_开头的key
-        Set keys = redisTemplate.keys("dish_*");
-        redisTemplate.delete(keys);
-
         return Result.success();
     }
 
@@ -106,6 +105,7 @@ public class SetmealController {
 
     @PutMapping
     @ApiOperation("修改套餐")
+    @CacheEvict(cacheNames = "setmealCache", allEntries = true)  //删除setmealCache中所有缓存
     public Result<Void> update(@RequestBody SetmealDTO setmealDTO) {
         setmealService.updateWithDish(setmealDTO);
         return Result.success();
