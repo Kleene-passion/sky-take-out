@@ -20,4 +20,12 @@ public interface UserMapper {
      * @param user 用户信息
      */
     void insert(User user);
+
+     /**
+     * 根据用户id查询用户
+     * @param userId 用户id
+     * @return 用户信息
+     */
+    @Select("select * from sky_take_out.user where id = #{id}")
+    User getById(Long userId);
 }
