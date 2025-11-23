@@ -43,4 +43,12 @@ public interface OrderMapper {
       */
     @Select("select * from sky_take_out.orders where id = #{id}")
     Orders getById(Long id);
+
+     /**
+      * 根据状态查询订单数量
+      * @param status 订单状态
+      * @return 订单数量
+      */
+    @Select("select count(*) from sky_take_out.orders where status = #{status}")
+    Integer countStatus(Integer status);
 }
