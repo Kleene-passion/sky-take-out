@@ -178,32 +178,24 @@ public class WeChatPayUtil {
         return result;
     }
 
-
     /**
      * 申请退款
      *
      * @param outTradeNo    商户订单号
-     * @param outRefundNo   商户退款单号
-     * @param refund        退款金额
-     * @param total         原订单金额
+     * @param refundNo      商户退款单号
+     * @param refundAmount  退款金额
+     * @param totalAmount   原订单金额
      * @return
      */
-    public String refund(String outTradeNo, String outRefundNo, BigDecimal refund, BigDecimal total) throws Exception {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("out_trade_no", outTradeNo);
-        jsonObject.put("out_refund_no", outRefundNo);
-
-        JSONObject amount = new JSONObject();
-        amount.put("refund", refund.multiply(new BigDecimal(100)).setScale(2, BigDecimal.ROUND_HALF_UP).intValue());
-        amount.put("total", total.multiply(new BigDecimal(100)).setScale(2, BigDecimal.ROUND_HALF_UP).intValue());
-        amount.put("currency", "CNY");
-
-        jsonObject.put("amount", amount);
-        jsonObject.put("notify_url", weChatProperties.getRefundNotifyUrl());
-
-        String body = jsonObject.toJSONString();
-
-        //调用申请退款接口
-        return post(REFUNDS, body);
+    public JSONObject refund(String outTradeNo, String refundNo,
+                             BigDecimal refundAmount, BigDecimal totalAmount) {
+        JSONObject result = new JSONObject();
+        result.put("code", "SUCCESS");
+        result.put("message", "模拟退款成功");
+        result.put("out_trade_no", outTradeNo);
+        result.put("refund_no", refundNo);
+        result.put("refund", refundAmount);
+        result.put("total", totalAmount);
+        return result;
     }
 }
